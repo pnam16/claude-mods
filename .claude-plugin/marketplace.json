@@ -1,6 +1,7 @@
 {
   "name": "ame-mods",
   "owner": { "name": "ame" },
+  "description": "Claude Code mods by ame",
   "plugins": [
     { "name": "cache-handoff", "source": "./mods/cache-handoff" }
   ]

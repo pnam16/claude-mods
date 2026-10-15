@@ -208,7 +208,15 @@ async function startFromHandoff($: EngineInterface, key: string, stored: StoredH
     '</handoff>',
     `The previous conversation is still there: claude --resume ${oldId}`,
   ].join('\n')
-  if (title !== undefined) await $.command.run({ command: 'rename', args: `${title}_${titleStamp(now)}` })
+  if (title !== undefined) {
+    // The new conversation is already open and carries the handoff, so a
+    // refused rename only leaves it unnamed.
+    try {
+      await $.command.run({ command: 'rename', args: `${title}_${titleStamp(now)}` })
+    } catch (error) {
+      $.ui.log(`cache-handoff: rename refused, the new conversation stays unnamed: ${errorText(error)}`)
+    }
+  }
   showNotice($, `New conversation started from the handoff of ${clockTime(stored.writtenAt)}; your next prompt carries it.`)
 }
 
@@ -219,6 +227,8 @@ async function handoffIfDue($: EngineInterface, now: number) {
   idle.isArmed = false
   idle.isWriting = true
   try {
+    // The turn's end may have come before its cache write reached the
+    // transcript, so the tier is read again here.
     if ((await readTier($)) === '5m') {
       idle.cacheTtlMs = SHORT_CACHE_TTL_MS
       $.ui.log('cache-handoff: 5 minute cache tier, no handoff written')
@@ -366,9 +376,17 @@ export const register: Register = (on, options) => {
       idle.forkedAt = undefined
       idle.isFinished = false
       const tokens = (await $.session.usage()).context.tokens ?? 0
-      idle.isArmed = !idle.isDisabled && tokens >= MIN_CONTEXT_TOKENS
+      const isWatched = !idle.isDisabled && tokens >= MIN_CONTEXT_TOKENS
       // A gap the mod sits out ends quietly, with no notice at cold either.
-      idle.isColdHandled = !idle.isArmed
+      idle.isColdHandled = !isWatched
+      // On the 5m tier the cache is cold long before a handoff could be
+      // written, so skip it and let the notice come at the 5m mark.
+      if (isWatched && (await readTier($)) === '5m') {
+        idle.cacheTtlMs = SHORT_CACHE_TTL_MS
+        idle.isArmed = false
+      } else {
+        idle.isArmed = isWatched
+      }
       await ensurePoller($)
     }
     return next(e)

@@ -8,6 +8,7 @@ const typed = { origin: { kind: 'composer' as const }, presentation: { isFullscr
 type EngineOptions = {
   title?: string
   isCommandRefused?: boolean
+  refusedCommand?: string
   contextTokens?: number
   forkText?: string
   stored?: Record<string, unknown>
@@ -31,7 +32,7 @@ function engine(on: On, tail: string, options: EngineOptions = {}) {
     return { text: e.text }
   })
   on('command.run', ($, e) => {
-    if (isCommandRefused) throw new Error('refused')
+    if (isCommandRefused || e.command === options.refusedCommand) throw new Error('refused')
     commands.push([e.command, e.args].filter(Boolean).join(' '))
     return { text: '' }
   })
@@ -173,15 +174,35 @@ test('pins the notice when the new conversation is refused', async ($, on) => {
   expect(statuses[0]).toContain('/handoff now')
 })
 
-test('writes nothing on the 5 minute cache tier and says the cache is cold', async ($, on) => {
+test('a refused rename leaves the new conversation unnamed and still carries the handoff', async ($, on) => {
   const clock = mock.clock(on)
-  const { store, statuses, commands } = engine(on, cacheWrite('5m'))
+  const { statuses, commands, prompts } = engine(on, cacheWrite('1h'), { refusedCommand: 'rename' })
   await oneTurn($)
 
   await clock.advance(2 * 60 * MINUTE)
+  expect(commands).toEqual(['clear'])
+  expect(statuses[0]).toContain('New conversation started')
+
+  await $.prompt.submit({ text: 'carry on', wait: false, origin: { kind: 'composer' } })
+  expect(prompts[0]).toContain('handoff body')
+})
+
+test('writes nothing on the 5 minute cache tier and says so once that cache is cold', async ($, on) => {
+  const clock = mock.clock(on)
+  const { store, statuses, commands, forks } = engine(on, cacheWrite('5m'))
+  await oneTurn($)
+
+  await clock.advance(4 * MINUTE)
+  expect(statuses.length).toBe(0)
+
+  await clock.advance(2 * MINUTE)
+  expect(statuses[0]).toContain('/clear first')
+
+  await clock.advance(2 * 60 * MINUTE)
+  expect(forks.length).toBe(0)
   expect(store.size).toBe(0)
   expect(commands.length).toBe(0)
-  expect(statuses[0]).toContain('/clear first')
+  expect(statuses.length).toBe(1)
 
   await $.turn.start({ text: 'back again', turnId: 't2' })
   expect(statuses[1]).toBe(undefined)
