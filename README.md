@@ -37,5 +37,3 @@ tsc -p mods/<mod>
 ```
 
 The engine writes `mods/<mod>/.claude-plugin/types/` once it loads the mod; that folder is not committed.
-
-`probes/` holds throwaway mods that check engine behaviour live before a mod relies on it. They are not in the marketplace; run one with `claude --plugin-dir probes/<probe>`. Each writes `probe.log` in its own folder.

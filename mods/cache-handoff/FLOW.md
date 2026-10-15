@@ -6,7 +6,7 @@ Status: 0.4.1 is implemented in `hooks/register.ts` and passes its mock tests.
 
 Live checks:
 
-- 2026-10-14, with the probe in `probes/clear-probe`: `$.command.run` ran `/clear` and then `/rename` from a timer while the session was idle; the timer kept running under the new session id; `grep` was on PATH and read the old title; after `/clear` only the `SessionStart:clear` hooks ran, and the memory `session-start.js` did not; a cross-session peer message did not take the carried text.
+- 2026-10-14, with a throwaway probe mod (since removed from the repo): `$.command.run` ran `/clear` and then `/rename` from a timer while the session was idle; the timer kept running under the new session id; `grep` was on PATH and read the old title; after `/clear` only the `SessionStart:clear` hooks ran, and the memory `session-start.js` did not; a cross-session peer message did not take the carried text.
 - 2026-10-15, a real session on 0.4.0: the last turn ended about 11:10, the handoff was written at 12:04 ([54m]), `/clear` and `/rename` ran at 13:04 ([114m]), and the first prompt typed at 13:23 opened with the `<handoff>` block. Every step of the timeline has now run live.
 
 ## Timeline
