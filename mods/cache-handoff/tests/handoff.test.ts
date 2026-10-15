@@ -132,6 +132,22 @@ test('writes the handoff, then opens a new named conversation once the refreshed
   expect(prompts[1]).toBe('and then')
 })
 
+// A conversation handed off again keeps one stamp, whatever earlier
+// handoffs left on its title.
+for (const title of [
+  'KJMTP2-6178_20261015_150400',
+  'KJMTP2-6178_2026-10-15 13:04',
+  'KJMTP2-6178_20261015_150400_20261015_170400',
+]) {
+  test(`replaces the stamp on "${title}" instead of adding another`, async ($, on) => {
+    const clock = mock.clock(on)
+    const { commands } = engine(on, cacheWrite('1h'), { title })
+    await oneTurn($)
+    await clock.advance(2 * 60 * MINUTE)
+    expect(commands[1]).toMatch(/^rename KJMTP2-6178_\d{8}_\d{6}$/)
+  })
+}
+
 test('leaves an unnamed conversation unnamed', async ($, on) => {
   const clock = mock.clock(on)
   const { commands } = engine(on, cacheWrite('1h'), { title: '' })

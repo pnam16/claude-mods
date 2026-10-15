@@ -178,6 +178,17 @@ function titleStamp(ms: number) {
   return `${date}_${pad(at.getHours())}${pad(at.getMinutes())}${pad(at.getSeconds())}`
 }
 
+// The title without the stamps earlier handoffs appended, in this format or
+// 0.4.0's "_YYYY-MM-DD HH:MM", so a conversation handed off again gets one
+// fresh stamp instead of a growing chain.
+const TRAILING_STAMP = /(?:_\d{8}_\d{6}|[_ ]\d{4}-\d{2}-\d{2} \d{2}:\d{2})$/
+
+function baseTitle(title: string) {
+  let base = title
+  while (TRAILING_STAMP.test(base)) base = base.replace(TRAILING_STAMP, '')
+  return base
+}
+
 function coldNotice(coldAt: number, stored: StoredHandoff | undefined) {
   const cold = `Prompt cache cold since ${clockTime(coldAt)}`
   if (stored === undefined) {
@@ -212,7 +223,7 @@ async function startFromHandoff($: EngineInterface, key: string, stored: StoredH
     // The new conversation is already open and carries the handoff, so a
     // refused rename only leaves it unnamed.
     try {
-      await $.command.run({ command: 'rename', args: `${title}_${titleStamp(now)}` })
+      await $.command.run({ command: 'rename', args: `${baseTitle(title)}_${titleStamp(now)}` })
     } catch (error) {
       $.ui.log(`cache-handoff: rename refused, the new conversation stays unnamed: ${errorText(error)}`)
     }

@@ -13,7 +13,7 @@ Times count from the end of your last turn, on the usual 1 hour cache.
 | 0 min | Your turn ends. The mod starts watching, but only if the conversation holds 50k context tokens or more. Smaller ones are cheap to re-cache, so it leaves them alone. |
 | 54 min | The mod asks Claude for a handoff note (goal, progress, decisions, files, next step) while the cache is still warm. If the work is finished, Claude says so and nothing is saved. |
 | 54 to 114 min | The cache is still warm. Come back now and you simply continue the full conversation; the saved note is discarded. |
-| 114 min | The cache is cold. The mod runs `/clear` and renames the new conversation to `<old name>_YYYYMMDD_HHMMSS` if the old one had a name. |
+| 114 min | The cache is cold. The mod runs `/clear` and renames the new conversation to `<old name>_YYYYMMDD_HHMMSS` if the old one had a name. A stamp left by an earlier handoff is replaced, so `task_20261015_150400` becomes `task_20261015_170432`, not a longer chain. |
 | Later | The first prompt you type there carries the handoff note in front of your text, once. |
 
 Your old conversation is never changed. The carried handoff ends with the command to reopen it in full: `claude --resume <old id>`.
