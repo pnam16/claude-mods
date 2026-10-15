@@ -18,7 +18,7 @@ Live checks (2026-10-14, with the probe in `probes/clear-probe`): `$.command.run
                                      otherwise: handoff saved to $.store under the session id
  [114m]    step 2: apply (new)       read the old conversation's name
                                      /clear  ->  new conversation
-                                     /rename "<old name>_YYYY-MM-DD HH:MM" if it had a name
+                                     /rename "<old name>_YYYYMMDD_HHMMSS" if it had a name
                                      status line: new conversation from the handoff
  [later]   you type a prompt         prompt = <handoff> + resume line + your text, once
                                      stored handoff deleted
@@ -60,7 +60,7 @@ flowchart TD
     L -- coldAction = notice --> N[Pin reminder under the prompt]
     L -- coldAction = new, default --> M{Handoff stored?}
     M -- no --> N
-    M -- yes --> W["[114m] step 2, apply: read old name,<br/>/clear to a new conversation,<br/>/rename to old name_date time if it had one"]
+    M -- yes --> W["[114m] step 2, apply: read old name,<br/>/clear to a new conversation,<br/>/rename to old name_YYYYMMDD_HHMMSS if it had one"]
     W -- refused --> N
     W -- ok --> X["[later] you type a prompt<br/>the handoff goes in front of it, once"]
     X --> Q[Delete stored handoff]

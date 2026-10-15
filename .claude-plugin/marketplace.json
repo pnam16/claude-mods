@@ -1,6 +1,6 @@
 {
   "name": "ame-mods",
-  "owner": { "name": "namcp" },
+  "owner": { "name": "ame" },
   "plugins": [
     { "name": "cache-handoff", "source": "./mods/cache-handoff" }
   ]

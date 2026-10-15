@@ -116,7 +116,7 @@ test('writes the handoff, then opens a new named conversation once the refreshed
 
   await clock.advance(2 * MINUTE)
   expect(commands[0]).toBe('clear')
-  expect(commands[1]).toMatch(/^rename My work_\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/)
+  expect(commands[1]).toMatch(/^rename My work_\d{8}_\d{6}$/)
 
   await clock.advance(3 * 60 * MINUTE)
   expect(commands.length).toBe(2)

@@ -171,6 +171,13 @@ function dateTime(ms: number) {
   return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())} ${clockTime(ms)}`
 }
 
+// Appended to a renamed conversation's title: YYYYMMDD_HHMMSS, no spaces.
+function titleStamp(ms: number) {
+  const at = new Date(ms)
+  const date = `${at.getFullYear()}${pad(at.getMonth() + 1)}${pad(at.getDate())}`
+  return `${date}_${pad(at.getHours())}${pad(at.getMinutes())}${pad(at.getSeconds())}`
+}
+
 function coldNotice(coldAt: number, stored: StoredHandoff | undefined) {
   const cold = `Prompt cache cold since ${clockTime(coldAt)}`
   if (stored === undefined) {
@@ -201,7 +208,7 @@ async function startFromHandoff($: EngineInterface, key: string, stored: StoredH
     '</handoff>',
     `The previous conversation is still there: claude --resume ${oldId}`,
   ].join('\n')
-  if (title !== undefined) await $.command.run({ command: 'rename', args: `${title}_${dateTime(now)}` })
+  if (title !== undefined) await $.command.run({ command: 'rename', args: `${title}_${titleStamp(now)}` })
   showNotice($, `New conversation started from the handoff of ${clockTime(stored.writtenAt)}; your next prompt carries it.`)
 }
 

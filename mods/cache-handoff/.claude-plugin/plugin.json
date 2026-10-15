@@ -1,7 +1,7 @@
 {
   "name": "cache-handoff",
   "version": "0.4.0",
-  "author": { "name": "namcp" },
+  "author": { "name": "ame" },
   "description": "Writes a session handoff when about 5 minutes of the 1h prompt cache remain on an idle session, then, once that cache has gone cold, opens a new conversation from the handoff or pins a notice.",
   "userConfig": {
     "coldAction": {

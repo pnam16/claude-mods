@@ -1,6 +1,6 @@
 {
   "name": "clear-probe",
   "version": "0.1.0",
-  "author": { "name": "namcp" },
+  "author": { "name": "ame" },
   "description": "Live test for cache-handoff 0.4.0: runs /clear and /rename from a timer after an idle minute and logs what happens."
 }
