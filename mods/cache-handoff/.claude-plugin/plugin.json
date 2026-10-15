@@ -1,0 +1,15 @@
+{
+  "name": "cache-handoff",
+  "version": "0.4.0",
+  "author": { "name": "namcp" },
+  "description": "Writes a session handoff when about 5 minutes of the 1h prompt cache remain on an idle session, then, once that cache has gone cold, opens a new conversation from the handoff or pins a notice.",
+  "userConfig": {
+    "coldAction": {
+      "type": "string",
+      "title": "When the cache goes cold",
+      "description": "new: clear to a new conversation opened by the handoff, named after the old one plus the date and time. notice: pin a reminder under the prompt. off: do nothing.",
+      "options": ["new", "notice", "off"],
+      "default": "new"
+    }
+  }
+}
