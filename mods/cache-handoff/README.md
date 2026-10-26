@@ -8,17 +8,20 @@ Claude Code keeps your conversation in a prompt cache for about an hour. If you 
 
 Times count from the end of your last turn, on the usual 1 hour cache.
 
-| When | What happens |
-| --- | --- |
-| 0 min | Your turn ends. The mod starts watching, but only if the conversation holds 50k context tokens or more. Smaller ones are cheap to re-cache, so it leaves them alone. |
-| 54 min | The mod asks Claude for a handoff note (goal, progress, decisions, files, next step) while the cache is still warm. If the work is finished, Claude says so and nothing is saved. |
-| 54 to 114 min | The cache is still warm. Come back now and you simply continue the full conversation; the saved note is discarded. |
-| 114 min | The cache is cold. The mod runs `/clear` and renames the new conversation to `<old name>_YYYYMMDD_HHMMSS` if the old one had a name. A stamp left by an earlier handoff is replaced, so `task_20261015_150400` becomes `task_20261015_170432`, not a longer chain. |
-| Later | The first prompt you type there carries the handoff note in front of your text, once. |
+| When          | What happens                                                                                                                                                                                                                                                       |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 0 min         | Your turn ends. The mod starts watching, but only if the conversation holds 50k context tokens or more. Smaller ones are cheap to re-cache, so it leaves them alone.                                                                                               |
+| 54 min        | The mod asks Claude for a handoff note (goal, progress, decisions, files, next step) while the cache is still warm. If the work is finished, Claude says so and nothing is saved.                                                                                  |
+| 54 to 114 min | The cache is still warm. Come back now and you simply continue the full conversation; the saved note is discarded.                                                                                                                                                 |
+| 114 min       | The cache is cold. The mod runs `/clear` and renames the new conversation to `<old name>_YYYYMMDD_HHMMSS` if the old one had a name. A stamp left by an earlier handoff is replaced, so `task_20261015_150400` becomes `task_20261015_170432`, not a longer chain. |
+| 114 min       | The handoff note is shown on the new conversation's screen, so you can see where the work stopped and what comes next before you type. The model does not read this copy.                                                                                          |
+| Later         | The first prompt you type there carries the handoff note in front of your text, once.                                                                                                                                                                              |
 
 Your old conversation is never changed. The carried handoff ends with the command to reopen it in full: `claude --resume <old id>`.
 
-On the 5 minute cache tier there is not enough time to write a handoff, so the mod only shows a reminder to `/clear` once that cache has gone cold.
+On the 5 minute cache tier there is not enough time to write a handoff, so the mod does nothing for that conversation: no handoff and no reminder.
+
+Left unset, Claude Code picks the tier itself: 1 hour on a subscription within its usage limits, 5 minutes on an API key, Bedrock, Vertex or Foundry. To keep the 1 hour tier, and with it the handoff, add `"promptCacheTtl": "1h"` to your `settings.json` (or set `CLAUDE_CODE_PROMPT_CACHE_TTL=1h`). A 1 hour cache write costs more than a 5 minute one, so this is your call.
 
 ## Install
 
@@ -33,22 +36,22 @@ This needs a Claude Code build that supports mods (hooks modules loaded from `ho
 
 The mod runs on its own. The `/handoff` command controls it for the current session:
 
-| Command | Effect |
-| --- | --- |
-| `/handoff` | Show whether it is armed and whether a handoff is stored. |
-| `/handoff off` | Stop watching this session. |
-| `/handoff on` | Start watching again from the next turn. |
+| Command        | Effect                                                                                                                        |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `/handoff`     | Show whether it is armed and whether a handoff is stored.                                                                     |
+| `/handoff off` | Stop watching this session.                                                                                                   |
+| `/handoff on`  | Start watching again from the next turn.                                                                                      |
 | `/handoff now` | Open the new conversation from the stored handoff right away, for example after you resumed a session with `claude --resume`. |
 
 ## Settings
 
 Set `coldAction` in `/plugin configure`:
 
-| Value | When the cache goes cold |
-| --- | --- |
-| `new` (default) | Open a new conversation from the handoff, as described above. |
-| `notice` | Only show a reminder under the prompt; `/handoff now` still opens the new conversation when you want it. |
-| `off` | Do nothing at cold. The handoff is still written at 54 min and kept until your next turn. |
+| Value           | When the cache goes cold                                                                                 |
+| --------------- | -------------------------------------------------------------------------------------------------------- |
+| `new` (default) | Open a new conversation from the handoff, as described above.                                            |
+| `notice`        | Only show a reminder under the prompt; `/handoff now` still opens the new conversation when you want it. |
+| `off`           | Do nothing at cold. The handoff is still written at 54 min and kept until your next turn.                |
 
 To try the whole cycle in a few minutes, shorten the timings before starting Claude Code:
 
