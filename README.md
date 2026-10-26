@@ -4,9 +4,10 @@ Claude Code mods by ame, published as the plugin marketplace `ame-mods`.
 
 ## Mods
 
-| Mod | What it does |
-| --- | --- |
+| Mod                                           | What it does                                                                                                                                                                                                                                                                                       |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [cache-handoff](mods/cache-handoff/README.md) | Saves you from paying to re-cache a long conversation after you step away. While the prompt cache is still warm it writes a short handoff note, and once the cache has gone cold it opens a fresh conversation that starts from that note. The old conversation stays whole for `claude --resume`. |
+| cache-keepalive                               | Keeps an idle conversation's prompt cache warm with a tiny forked request shortly before it would expire, for up to 3 idle hours by default, so you can come back later without re-caching the whole transcript.                                                                                   |
 
 ## Install
 

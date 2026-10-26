@@ -1,0 +1,14 @@
+{
+  "author": {"name": "ame"},
+  "description": "Keeps an idle conversation's prompt cache warm with a tiny forked request shortly before the cache would expire, for a limited number of idle hours.",
+  "name": "cache-keepalive",
+  "userConfig": {
+    "maxIdleHours": {
+      "default": "3",
+      "description": "Each refresh bills one cache read of the whole context, so keeping warm stops after this long without a turn of yours.",
+      "title": "Stop after this many idle hours",
+      "type": "string"
+    }
+  },
+  "version": "0.1.0"
+}
