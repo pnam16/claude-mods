@@ -1,0 +1,18 @@
+{
+  "name": "claude-mods",
+  "private": true,
+  "description": "Claude Code mods by ame, published as the plugin marketplace `ame-mods`.",
+  "repository": {
+    "type": "git",
+    "url": "git@github-pnam16:pnam16/claude-mods.git"
+  },
+  "scripts": {
+    "typecheck": "tsc -p mods/cache-handoff && tsc -p mods/cache-keepalive",
+    "lint": "biome migrate --write && biome check --write",
+    "test": "claude plugin test mods/cache-handoff && claude plugin test mods/cache-keepalive"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.3",
+    "typescript": "^7.0.2"
+  }
+}

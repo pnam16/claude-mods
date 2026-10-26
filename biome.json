@@ -1,0 +1,91 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.3/schema.json",
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on",
+        "useSortedKeys": "on"
+      }
+    },
+    "enabled": true
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": [
+      "**",
+      "!**/.claude-plugin/types",
+      "!**/.git",
+      "!**/node_modules",
+      "!**/package.json",
+      "!**/pnpm-lock.yaml"
+    ]
+  },
+  "formatter": {
+    "bracketSpacing": false,
+    "enabled": true,
+    "expand": "auto",
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 80,
+    "useEditorconfig": true
+  },
+  "javascript": {
+    "formatter": {
+      "arrowParentheses": "always",
+      "bracketSpacing": false,
+      "lineEnding": "lf",
+      "quoteProperties": "preserve",
+      "quoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "complexity": {
+        "useArrowFunction": "error",
+        "useOptionalChain": "error"
+      },
+      "correctness": {
+        "noUnusedVariables": "off",
+        "useIsNan": "error"
+      },
+      "nursery": {
+        "useConsistentFunctionStyle": {
+          "level": "error",
+          "options": {"style": "expression"}
+        }
+      },
+      "performance": {
+        "noBarrelFile": "error",
+        "noNamespaceImport": "error"
+      },
+      "preset": "recommended",
+      "style": {
+        "noNonNullAssertion": "off",
+        "noUselessElse": "error",
+        "noYodaExpression": "error",
+        "useCollapsedElseIf": "error",
+        "useConsistentCurlyBraces": "warn",
+        "useConst": "error",
+        "useImportType": "error",
+        "useNodejsImportProtocol": "off",
+        "useSingleVarDeclarator": "error"
+      },
+      "suspicious": {
+        "noDuplicateObjectKeys": "error",
+        "noEmptyBlockStatements": "error",
+        "noExplicitAny": "error",
+        "useAwait": "error"
+      }
+    }
+  },
+  "vcs": {
+    "clientKind": "git",
+    "enabled": false,
+    "useIgnoreFile": false
+  }
+}
