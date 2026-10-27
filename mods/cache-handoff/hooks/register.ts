@@ -29,6 +29,8 @@ type StoredHandoff = {text: string; writtenAt: number; cwd: string};
 const config = {
   cacheTtlMs: 60 * MINUTE_MS,
   coldAction: "new" as ColdAction,
+  // The slash command's name: cache-handoff when another plugin owns handoff.
+  command: "handoff",
   leadMs: 6 * MINUTE_MS,
 };
 
@@ -228,11 +230,11 @@ const baseTitle = (title: string) => {
 };
 
 const coldNotice = (coldAt: number, stored: StoredHandoff | undefined) => {
-  const cold = `Prompt cache cold since ${clockTime(coldAt)}`;
+  const cold = `Cache went cold at ${clockTime(coldAt)}`;
   if (stored === undefined) {
-    return `${cold}. The next prompt re-caches the whole transcript; /clear first to start lean.`;
+    return `${cold}. Run /clear first to keep the next prompt cheap.`;
   }
-  return `${cold}. Handoff written at ${clockTime(stored.writtenAt)}; /handoff now opens a new conversation from it.`;
+  return `${cold}. Run /${config.command} now to continue from the handoff of ${clockTime(stored.writtenAt)}.`;
 };
 
 const showNotice = ($: EngineInterface, text: string) => {
@@ -273,7 +275,7 @@ const startFromHandoff = async (
       });
     } catch (error) {
       $.ui.log(
-        `cache-handoff: rename refused, the new conversation stays unnamed: ${errorText(error)}`,
+        `cache-handoff: could not rename the new conversation: ${errorText(error)}`,
       );
     }
   }
@@ -295,7 +297,7 @@ const startFromHandoff = async (
   }
   showNotice(
     $,
-    `New conversation started from the handoff of ${clockTime(stored.writtenAt)}; your next prompt carries it.`,
+    `Continued from the handoff of ${clockTime(stored.writtenAt)}. Your next prompt includes it.`,
   );
 };
 
@@ -352,7 +354,7 @@ const actIfCold = async ($: EngineInterface, now: number) => {
       return;
     } catch (error) {
       $.ui.log(
-        `cache-handoff: new conversation failed, showing the notice: ${errorText(error)}`,
+        `cache-handoff: could not open a new conversation: ${errorText(error)}`,
       );
     }
   }
@@ -390,7 +392,7 @@ const handoffCommand = async ($: EngineInterface, args: string) => {
   }
   if (word === "on") {
     idle.isDisabled = false;
-    return "cache-handoff is on; it arms when the next turn ends.";
+    return "cache-handoff is on from the next turn.";
   }
   const key = storeKey(await $.session.id());
   const stored = await readStored($, key);
@@ -419,9 +421,9 @@ const handoffCommand = async ($: EngineInterface, args: string) => {
       : "waiting for the next turn";
   const handoff =
     stored === undefined
-      ? "no handoff stored"
-      : `handoff stored at ${clockTime(stored.writtenAt)}`;
-  return `cache-handoff: ${state}, ${handoff}, coldAction ${config.coldAction}. Usage: /handoff off | on | now`;
+      ? "No handoff stored."
+      : `Handoff from ${clockTime(stored.writtenAt)} stored.`;
+  return `cache-handoff: ${state}. ${handoff} coldAction: ${config.coldAction}. Usage: /${config.command} off | on | now`;
 };
 
 export const register: Register = (on, options) => {
@@ -438,12 +440,27 @@ export const register: Register = (on, options) => {
       await $.env.get("CACHE_HANDOFF_LEAD_MIN"),
       6 * MINUTE_MS,
     );
-    await $.command.register({
+    const spec = {
       argumentHint: "off | on | now",
       description:
-        "Cache handoff: off, on, or now to open a new conversation from the stored handoff",
-      name: "handoff",
-    });
+        "Cache handoff: off, on, or now to continue from the handoff",
+    };
+    // A refused name must not stop the rest of session.start.
+    try {
+      config.command = (
+        await $.command.register({...spec, name: "handoff"})
+      ).command;
+    } catch {
+      try {
+        config.command = (
+          await $.command.register({...spec, name: "cache-handoff"})
+        ).command;
+      } catch (error) {
+        $.ui.toast(
+          `cache-handoff: could not register a slash command: ${errorText(error)}`,
+        );
+      }
+    }
     await ensurePoller($);
     const now = await $.clock.now();
     await pruneStore($, now);
@@ -452,15 +469,17 @@ export const register: Register = (on, options) => {
     if (stored !== undefined) {
       showNotice(
         $,
-        `A handoff from ${dateTime(stored.writtenAt)} is stored; /handoff now opens a new conversation from it.`,
+        `Handoff from ${dateTime(stored.writtenAt)} stored. Run /${config.command} now to continue from it.`,
       );
     }
     return next(e);
   });
 
-  on("command.run", {command: "handoff"}, async ($, e) => ({
-    text: await handoffCommand($, e.args),
-  }));
+  on("command.run", async ($, e, next) =>
+    e.command === config.command
+      ? {text: await handoffCommand($, e.args)}
+      : next(e),
+  );
 
   // The first prompt the person types in the new conversation opens with the
   // handoff; a notification or a peer's message does not take it.

@@ -12,6 +12,8 @@ type EngineOptions = {
   title?: string;
   isCommandRefused?: boolean;
   refusedCommand?: string;
+  // A command name another plugin already owns.
+  takenName?: string;
   contextTokens?: number;
   forkText?: string;
   stored?: Record<string, unknown>;
@@ -61,7 +63,10 @@ const engine = (
     commands.push([e.command, e.args].filter(Boolean).join(" "));
     return {text: ""};
   });
-  on("command.register", (_$, e) => ({value: {command: e.name}}));
+  on("command.register", (_$, e) => {
+    if (e.name === options.takenName) throw new Error(`"/${e.name}" refused`);
+    return {value: {command: e.name}};
+  });
   on("session.id", () => ({value: "session-1"}));
   on("session.cwd", () => ({value: "D:/ws/demo"}));
   on("session.usage", () => ({
@@ -275,7 +280,7 @@ test("a refused rename leaves the new conversation unnamed and still carries the
 
   await clock.advance(2 * 60 * MINUTE);
   expect(commands).toEqual(["clear"]);
-  expect(statuses[0]).toContain("New conversation started");
+  expect(statuses[0]).toContain("Continued from the handoff");
 
   await $.prompt.submit({
     origin: {kind: "composer"},
@@ -371,7 +376,7 @@ test(
 
     await clock.advance(2 * 60 * MINUTE);
     expect(commands.length).toBe(0);
-    expect(statuses[0]).toContain("Handoff written at");
+    expect(statuses[0]).toContain("continue from the handoff of");
   },
 );
 
@@ -443,4 +448,31 @@ test("a resumed session with a stored handoff offers it, and /handoff now opens 
   await $.prompt.submit({origin: {kind: "composer"}, text: "go", wait: false});
   expect(prompts[0]).toContain("stored body");
   expect(store.size).toBe(0);
+});
+
+test("a taken /handoff falls back to /cache-handoff and session.start runs on", async ($, on) => {
+  mock.clock(on, {now: 10 * MINUTE});
+  const {statuses} = engine(on, cacheWrite("1h"), {
+    stored: {
+      "handoff:session-1": {
+        cwd: "D:/ws/demo",
+        text: "stored body",
+        writtenAt: 5 * MINUTE,
+      },
+    },
+    takenName: "handoff",
+  });
+  await $.session.start({
+    cwd: "D:/ws/demo",
+    isInteractive: true,
+    surface: null,
+  });
+  expect(statuses[0]).toContain("/cache-handoff now");
+
+  const answer = await $.command.run({
+    args: "",
+    command: "cache-handoff",
+    ...typed,
+  });
+  expect(answer.text).toContain("Usage: /cache-handoff off | on | now");
 });

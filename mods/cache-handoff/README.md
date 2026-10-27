@@ -43,6 +43,8 @@ The mod runs on its own. The `/handoff` command controls it for the current sess
 | `/handoff on`  | Start watching again from the next turn.                                                                                      |
 | `/handoff now` | Open the new conversation from the stored handoff right away, for example after you resumed a session with `claude --resume`. |
 
+If another plugin already owns `/handoff`, the command registers as `/cache-handoff` instead and takes the same arguments.
+
 ## Settings
 
 Set `coldAction` in `/plugin configure`:
