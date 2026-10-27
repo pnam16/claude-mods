@@ -102,9 +102,7 @@ const leadMs = () => Math.min(LEAD_MS[idle.tier], ttlMs() / 2);
 
 const stop = ($: EngineInterface, why: string) => {
   idle.isStopped = true;
-  $.ui.log(
-    `cache-keepalive: stopped after ${idle.refreshes} refreshes, ${why}`,
-  );
+  $.ui.log(`cache-keepalive stopped after ${idle.refreshes} refreshes: ${why}`);
 };
 
 const refreshIfDue = async ($: EngineInterface, now: number) => {
@@ -132,7 +130,7 @@ const refreshIfDue = async ($: EngineInterface, now: number) => {
     idle.lastReadAt = now;
     idle.refreshes++;
     $.ui.log(
-      `cache-keepalive: refreshed, ${reply.usage.cache_read_input_tokens} tokens read from cache`,
+      `cache-keepalive refreshed the cache (${reply.usage.cache_read_input_tokens} tokens)`,
     );
   } finally {
     idle.isPinging = false;
@@ -164,14 +162,14 @@ const keepaliveCommand = (args: string) => {
   }
   if (word === "on") {
     idle.isDisabled = false;
-    return "cache-keepalive is on; it starts when the next turn ends.";
+    return "cache-keepalive is on from the next turn.";
   }
   const state = idle.isDisabled
     ? "off"
     : idle.isStopped
       ? "waiting for the next turn"
-      : "keeping warm";
-  return `cache-keepalive: ${state}, ${idle.refreshes} refreshes this idle gap, tier ${idle.tier}. Usage: /keepalive off | on`;
+      : "keeping the cache warm";
+  return `cache-keepalive: ${state}, ${idle.refreshes} refreshes this gap, ${idle.tier} tier. Usage: /keepalive off | on`;
 };
 
 export const register: Register = (on, options) => {
@@ -182,7 +180,7 @@ export const register: Register = (on, options) => {
     config.ttlOverrideMs = ttlMinutes > 0 ? ttlMinutes * MINUTE_MS : undefined;
     await $.command.register({
       argumentHint: "off | on",
-      description: "Cache keep-alive: off or on for this session, or its state",
+      description: "Cache keepalive: off, on, or show its state",
       name: "keepalive",
     });
     await ensurePoller($);
