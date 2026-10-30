@@ -2,7 +2,7 @@
 
 How the mod behaves across one idle gap on the main session, with `coldAction` at its default, `new`. Times count from the end of the last turn and assume the 1h cache tier.
 
-Status: 0.4.3 is implemented in `hooks/register.ts` and passes its mock tests.
+Status: 0.4.5 is implemented in `hooks/register.ts` and passes its mock tests.
 
 Live checks:
 
@@ -117,4 +117,5 @@ flowchart TD
 - The handoff is no longer sent to mcp-memory-service, so `session-start.js` and other providers (Codex, opencode, Gemini) do not see it.
 - The new conversation starts without the old one's session state: its todo list, permissions granted during the session, and background tasks.
 - Only a prompt typed in the composer takes the handoff; messages from other sessions and plugin prompts pass through unchanged.
+- After the switch, the handoff is kept under the new conversation's id until its first prompt, so a Claude Code restarted in between shows it again and still carries it. The screen of a resumed conversation does not redraw the first copy of the notice.
 - If `/clear` is refused, the mod falls back to the notice, and the stored handoff waits for `/handoff now`. If only `/rename` is refused, the new conversation stays unnamed and your next prompt still carries the handoff.

@@ -22,7 +22,14 @@ const HANDOFF_PROMPT = [
 
 type CacheTier = "1h" | "5m" | "unknown";
 type ColdAction = "new" | "notice" | "off";
-type StoredHandoff = {text: string; writtenAt: number; cwd: string};
+// fromSessionId marks a handoff already carried into a new conversation, kept
+// under that conversation's id until its first prompt.
+type StoredHandoff = {
+  text: string;
+  writtenAt: number;
+  cwd: string;
+  fromSessionId?: string;
+};
 
 // The settings: coldAction from /plugin configure, the timings from the
 // environment so a live test can shorten them.
@@ -73,6 +80,9 @@ const readStored = async (
         cwd: String(value.cwd ?? ""),
         text: value.text,
         writtenAt: value.writtenAt,
+        ...(typeof value.fromSessionId === "string" && {
+          fromSessionId: value.fromSessionId,
+        }),
       }
     : undefined;
 };
@@ -258,13 +268,12 @@ const startFromHandoff = async (
   idle.transcriptPath = undefined;
   idle.lastTurnEndAt = undefined;
   idle.isArmed = false;
-  idle.pendingKey = key;
-  idle.pendingHandoff = [
-    `<handoff from="session ${oldId}" written="${dateTime(stored.writtenAt)}">`,
-    stored.text,
-    "</handoff>",
-    `The previous conversation is still there: claude --resume ${oldId}`,
-  ].join("\n");
+  // Kept under the new conversation's id, so a Claude Code restarted before
+  // its first prompt still shows and carries the handoff.
+  const newKey = storeKey(await $.session.id());
+  await $.store.set(newKey, {...stored, fromSessionId: oldId});
+  if (newKey !== key) await $.store.delete(key);
+  else $.ui.log("cache-handoff: /clear kept the session id", {to: "debug"});
   if (title !== undefined) {
     // The new conversation is already open and carries the handoff, so a
     // refused rename only leaves it unnamed.
@@ -279,8 +288,25 @@ const startFromHandoff = async (
       );
     }
   }
-  // The cleared screen is otherwise blank: show the person the handoff as a
-  // notice the model never reads, since their first prompt already carries it.
+  await carryHandoff($, newKey, stored, oldId);
+};
+
+// Readies the new conversation's first typed prompt to carry the handoff, and
+// shows the handoff on its screen, which is otherwise blank.
+const carryHandoff = async (
+  $: EngineInterface,
+  key: string,
+  stored: StoredHandoff,
+  oldId: string,
+) => {
+  idle.pendingKey = key;
+  idle.pendingHandoff = [
+    `<handoff from="session ${oldId}" written="${dateTime(stored.writtenAt)}">`,
+    stored.text,
+    "</handoff>",
+    `The previous conversation is still there: claude --resume ${oldId}`,
+  ].join("\n");
+  // A notice the model never reads, since the first prompt already carries it.
   try {
     const notice = [
       `Handoff from the previous conversation, written ${dateTime(stored.writtenAt)}:`,
@@ -464,9 +490,13 @@ export const register: Register = (on, options) => {
     await ensurePoller($);
     const now = await $.clock.now();
     await pruneStore($, now);
-    // A session resumed after Claude Code closed before its cache went cold.
-    const stored = await readStored($, storeKey(await $.session.id()));
-    if (stored !== undefined) {
+    const key = storeKey(await $.session.id());
+    const stored = await readStored($, key);
+    // A new conversation from a handoff, restarted before its first prompt.
+    if (stored?.fromSessionId !== undefined) {
+      await carryHandoff($, key, stored, stored.fromSessionId);
+    } else if (stored !== undefined) {
+      // A session resumed after Claude Code closed before its cache went cold.
       showNotice(
         $,
         `Handoff from ${dateTime(stored.writtenAt)} stored. Run /${config.command} now to continue from it.`,

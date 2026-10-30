@@ -42,6 +42,8 @@ const engine = (
   const prompts: string[] = [];
   const forks: string[] = [];
   const notices: string[] = [];
+  // /clear opens a new conversation under a new id.
+  let sessionId = "session-1";
   on("session.append", (_$, e, next) => {
     notices.push(
       e.message.content
@@ -61,13 +63,14 @@ const engine = (
     if (isCommandRefused || e.command === options.refusedCommand)
       throw new Error("refused");
     commands.push([e.command, e.args].filter(Boolean).join(" "));
+    if (e.command === "clear") sessionId = "session-2";
     return {text: ""};
   });
   on("command.register", (_$, e) => {
     if (e.name === options.takenName) throw new Error(`"/${e.name}" refused`);
     return {value: {command: e.name}};
   });
-  on("session.id", () => ({value: "session-1"}));
+  on("session.id", () => ({value: sessionId}));
   on("session.cwd", () => ({value: "D:/ws/demo"}));
   on("session.usage", () => ({
     value: {
@@ -187,6 +190,12 @@ test("writes the handoff, then opens a new named conversation once the refreshed
   expect(notices.length).toBe(1);
   expect(notices[0]).toContain("handoff body");
   expect(notices[0]).toContain("claude --resume session-1");
+  // Kept under the new conversation's id, so a restart before the first
+  // prompt still finds it.
+  expect([...store.keys()]).toEqual(["handoff:session-2"]);
+  expect(store.get("handoff:session-2")).toMatchObject({
+    fromSessionId: "session-1",
+  });
 
   await clock.advance(3 * 60 * MINUTE);
   expect(commands.length).toBe(2);
@@ -447,6 +456,39 @@ test("a resumed session with a stored handoff offers it, and /handoff now opens 
 
   await $.prompt.submit({origin: {kind: "composer"}, text: "go", wait: false});
   expect(prompts[0]).toContain("stored body");
+  expect(store.size).toBe(0);
+});
+
+test("a new conversation restarted before its first prompt shows the handoff and still carries it", async ($, on) => {
+  mock.clock(on, {now: 10 * MINUTE});
+  const {statuses, notices, commands, prompts, store} = engine(
+    on,
+    cacheWrite("1h"),
+    {
+      stored: {
+        "handoff:session-1": {
+          cwd: "D:/ws/demo",
+          fromSessionId: "session-0",
+          text: "carried body",
+          writtenAt: 5 * MINUTE,
+        },
+      },
+    },
+  );
+  await $.session.start({
+    cwd: "D:/ws/demo",
+    isInteractive: true,
+    surface: null,
+  });
+  expect(notices.length).toBe(1);
+  expect(notices[0]).toContain("carried body");
+  expect(statuses[0]).toContain("Your next prompt includes it");
+
+  await $.prompt.submit({origin: {kind: "composer"}, text: "go", wait: false});
+  expect(commands.length).toBe(0);
+  expect(prompts[0]).toContain("carried body");
+  expect(prompts[0]).toContain("claude --resume session-0");
+  expect(prompts[0]).toEndWith("go");
   expect(store.size).toBe(0);
 });
 

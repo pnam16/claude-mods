@@ -70,7 +70,7 @@ CACHE_HANDOFF_TTL_MIN=3 CACHE_HANDOFF_LEAD_MIN=1 claude
 - Writing the handoff is one extra model call per long idle gap. It reads the warm cache, so it is cheap, and it also keeps the cache warm for another hour.
 - Only a prompt you type takes the handoff. Messages from other sessions and plugin prompts pass through unchanged.
 - The new conversation does not inherit the old one's todo list, permissions granted during that session, or background tasks.
-- The mod works only while Claude Code is open. A handoff saved before you quit is offered again when you resume that session, and is dropped after 7 days if nobody comes back for it.
+- The mod works only while Claude Code is open. A handoff saved before you quit is offered again when you resume that session, and is dropped after 7 days if nobody comes back for it. If Claude Code restarts after the switch but before your first prompt, the new conversation shows the handoff again and your first prompt still carries it.
 - The handoff is kept in the mod's own local storage inside Claude Code. Nothing is sent anywhere else.
 - The mod reads the session transcript with `tail` and `grep` when they are on PATH, to find the cache tier and the conversation name.
 
