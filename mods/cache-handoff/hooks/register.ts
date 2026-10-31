@@ -315,15 +315,21 @@ const carryHandoff = async (
       "",
       `Full conversation: claude --resume ${oldId}`,
     ].join("\n");
-    await $.session.append({
+    const appended = await $.session.append({
       message: {content: [{text: notice, type: "text"}], type: "system"},
     });
+    if (appended.deny !== undefined)
+      $.ui.log(
+        `cache-handoff: the handoff notice was refused: ${appended.deny}`,
+      );
   } catch (error) {
     $.ui.log(`cache-handoff: could not show the handoff: ${errorText(error)}`);
   }
+  // With the date, since a restart can show it the next day; a resumed screen
+  // may not redraw the notice, so /handoff prints it.
   showNotice(
     $,
-    `Continued from the handoff of ${clockTime(stored.writtenAt)}. Your next prompt includes it.`,
+    `Continued from the handoff of ${dateTime(stored.writtenAt)}. Your next prompt includes it; /${config.command} shows it.`,
   );
 };
 
@@ -420,6 +426,8 @@ const handoffCommand = async ($: EngineInterface, args: string) => {
     idle.isDisabled = false;
     return "cache-handoff is on from the next turn.";
   }
+  if (word === "" && idle.pendingHandoff !== undefined)
+    return `Your next prompt opens with this handoff:\n\n${idle.pendingHandoff}`;
   const key = storeKey(await $.session.id());
   const stored = await readStored($, key);
   if (word === "now") {

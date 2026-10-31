@@ -36,12 +36,12 @@ This needs a Claude Code build that supports mods (hooks modules loaded from `ho
 
 The mod runs on its own. The `/handoff` command controls it for the current session:
 
-| Command        | Effect                                                                                                                        |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `/handoff`     | Show whether it is armed and whether a handoff is stored.                                                                     |
-| `/handoff off` | Stop watching this session.                                                                                                   |
-| `/handoff on`  | Start watching again from the next turn.                                                                                      |
-| `/handoff now` | Open the new conversation from the stored handoff right away, for example after you resumed a session with `claude --resume`. |
+| Command        | Effect                                                                                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/handoff`     | Show whether it is armed and whether a handoff is stored. In a new conversation waiting for its first prompt, print the handoff that prompt will carry. |
+| `/handoff off` | Stop watching this session.                                                                                                                             |
+| `/handoff on`  | Start watching again from the next turn.                                                                                                                |
+| `/handoff now` | Open the new conversation from the stored handoff right away, for example after you resumed a session with `claude --resume`.                           |
 
 If another plugin already owns `/handoff`, the command registers as `/cache-handoff` instead and takes the same arguments.
 

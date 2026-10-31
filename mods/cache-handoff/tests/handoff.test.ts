@@ -483,6 +483,14 @@ test("a new conversation restarted before its first prompt shows the handoff and
   expect(notices.length).toBe(1);
   expect(notices[0]).toContain("carried body");
   expect(statuses[0]).toContain("Your next prompt includes it");
+  // Dated, since a restart may come the next day.
+  expect(statuses[0]).toMatch(/handoff of \d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
+  expect(statuses[0]).toContain("/handoff shows it");
+
+  // A resumed screen may not redraw the notice, so /handoff prints it.
+  const shown = await $.command.run({args: "", command: "handoff", ...typed});
+  expect(shown.text).toContain("carried body");
+  expect(store.size).toBe(1);
 
   await $.prompt.submit({origin: {kind: "composer"}, text: "go", wait: false});
   expect(commands.length).toBe(0);
