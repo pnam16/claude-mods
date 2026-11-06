@@ -22,7 +22,7 @@ Live checks:
                                      otherwise: handoff saved to $.store under the session id
  [114m]    step 2: apply (new)       read the old conversation's name
                                      /clear  ->  new conversation
-                                     /rename "<old name>_YYYYMMDD_HHMMSS" if it had a name
+                                     /rename "<old name>_YYYYMMDD_HHMMSS" (an unnamed one is first named by /rename)
                                      (a stamp from an earlier handoff is replaced, not stacked)
                                      status line: new conversation from the handoff
  [later]   you type a prompt         prompt = <handoff> + resume line + your text, once
@@ -67,7 +67,7 @@ flowchart TD
     L -- coldAction = notice --> N[Pin reminder under the prompt]
     L -- coldAction = new, default --> M{Handoff stored?}
     M -- no --> N
-    M -- yes --> W["[114m] step 2, apply: read old name,<br/>/clear to a new conversation,<br/>/rename to old name_YYYYMMDD_HHMMSS if it had one,<br/>replacing an earlier stamp"]
+    M -- yes --> W["[114m] step 2, apply: read old name,<br/>/rename with no name if it has none,<br/>/clear to a new conversation,<br/>/rename to old name_YYYYMMDD_HHMMSS,<br/>replacing an earlier stamp"]
     W -- /clear refused --> N
     W -- "ok, or only /rename refused<br/>(stays unnamed)" --> X["[later] you type a prompt<br/>the handoff goes in front of it, once"]
     X --> Q[Delete stored handoff]

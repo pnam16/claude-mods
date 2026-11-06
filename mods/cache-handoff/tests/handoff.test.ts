@@ -44,6 +44,8 @@ const engine = (
   const notices: string[] = [];
   // /clear opens a new conversation under a new id.
   let sessionId = "session-1";
+  // /rename with no name stands in for the name Claude Code would pick.
+  let currentTitle = title;
   on("session.append", (_$, e, next) => {
     notices.push(
       e.message.content
@@ -64,6 +66,7 @@ const engine = (
       throw new Error("refused");
     commands.push([e.command, e.args].filter(Boolean).join(" "));
     if (e.command === "clear") sessionId = "session-2";
+    if (e.command === "rename" && !e.args) currentTitle = "Picked name";
     return {text: ""};
   });
   on("command.register", (_$, e) => {
@@ -93,7 +96,7 @@ const engine = (
   on("process.run", (_$, e) => {
     const stdout =
       e.argv[0] === "grep"
-        ? JSON.stringify({customTitle: title, type: "custom-title"})
+        ? JSON.stringify({customTitle: currentTitle, type: "custom-title"})
         : typeof tail === "string"
           ? tail
           : tail();
@@ -234,13 +237,15 @@ for (const title of [
   });
 }
 
-test("leaves an unnamed conversation unnamed", async ($, on) => {
+test("lets Claude Code name an unnamed conversation before the clear", async ($, on) => {
   const clock = mock.clock(on);
   const {commands} = engine(on, cacheWrite("1h"), {title: ""});
   await oneTurn($);
 
   await clock.advance(2 * 60 * MINUTE);
-  expect(commands).toEqual(["clear"]);
+  expect(commands[0]).toBe("rename");
+  expect(commands[1]).toBe("clear");
+  expect(commands[2]).toMatch(/^rename Picked name_\d{8}_\d{6}$/);
 });
 
 test("sits out a conversation under 50k tokens", async ($, on) => {

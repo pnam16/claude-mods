@@ -263,7 +263,19 @@ const startFromHandoff = async (
   now: number,
 ) => {
   const oldId = await $.session.id();
-  const title = await sessionTitle($);
+  let title = await sessionTitle($);
+  if (title === undefined) {
+    // /rename with no name lets Claude Code name the old conversation from
+    // its content, so the new one gets a name worth recognising.
+    try {
+      await $.command.run({command: "rename"});
+      title = await sessionTitle($);
+    } catch (error) {
+      $.ui.log(
+        `cache-handoff: could not name the old conversation: ${errorText(error)}`,
+      );
+    }
+  }
   await $.command.run({command: "clear"});
   idle.transcriptPath = undefined;
   idle.lastTurnEndAt = undefined;
